@@ -145,6 +145,31 @@ function render() {
   }
 
   renderApps(tv, (state.apps || []).slice().sort((a, b) => rank(a) - rank(b) || a.l.localeCompare(b.l)));
+  renderAdSkip(state);
+}
+
+// Pastille « Pubs YouTube » : seulement pour une télé avec l'app Télécommande (elle seule sait le faire)
+function renderAdSkip(state) {
+  const box = $("apps");
+  let chip = $("adskip");
+  if (state.adskip === undefined) {
+    if (chip) chip.remove();
+    return;
+  }
+  if (!chip) {
+    chip = document.createElement("button");
+    chip.id = "adskip";
+    chip.addEventListener("click", () => {
+      haptic();
+      const s = states[currentId];
+      const on = !(s && s.adskip);
+      send("adskip", on);
+      toast(on ? "Les pubs YouTube seront ignorées dès que possible" : "Pubs YouTube : ignorance auto coupée");
+    });
+  }
+  if (box.firstChild !== chip) box.prepend(chip);
+  chip.className = "adskip" + (state.adskip ? " on" : "");
+  chip.textContent = state.adskip ? `⏭ Pubs auto · ${state.skipped || 0}` : "⏭ Pubs auto : off";
 }
 
 function renderLocal(tv) {
