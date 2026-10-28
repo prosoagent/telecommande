@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Télécommande</title>
+<meta name="description" content="Télécommande de la télé du salon">
+<meta name="theme-color" content="#0b0f17">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Télécommande">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+:root {
+  --bg: #0b0f17;
+  --surface: #161c28;
+  --surface-2: #1e2636;
+  --press: #2b3650;
+  --text: #f3f5f9;
+  --muted: #8b95a8;
+  --accent: #4f8cff;
+  --danger: #ff5a5f;
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --radius: 22px;
+  --vh: 1vh;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); overflow: hidden; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  -webkit-user-select: none; user-select: none; touch-action: manipulation;
+  padding: calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 16px);
+  overscroll-behavior: none;
+  /* Collé aux quatre bords de l'écran : remplit toute la hauteur réelle, même installé sur l'iPhone */
+  position: fixed; inset: 0;
+}
+/* Tout tient sur un écran : les hauteurs suivent la taille de l'écran, le pavé prend la place restante */
+main { max-width: 420px; height: 100%; margin: 0 auto; display: flex; flex-direction: column; }
+#remote { display: flex; flex-direction: column; gap: clamp(8px, calc(1.5 * var(--vh)), 16px); height: 100%; }
+.hidden { display: none !important; }
+
+header { display: flex; align-items: center; justify-content: space-between; flex: 0 0 auto; }
+.top, .nav, .middle { flex: 0 0 auto; }
+h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
+.status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 3px rgba(251,191,36,.15); }
+.status.ok .dot { background: var(--ok); box-shadow: 0 0 0 3px rgba(52,211,153,.15); }
+.status.off .dot { background: var(--danger); box-shadow: 0 0 0 3px rgba(255,90,95,.15); }
+
+button {
+  font: inherit; color: var(--text); background: var(--surface); border: 0; border-radius: var(--radius);
+  display: grid; place-items: center; cursor: pointer; transition: background .08s, transform .08s;
+}
+button:active, button.down { background: var(--press); transform: scale(.96); }
+button svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.top { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.top button { height: clamp(42px, calc(7 * var(--vh)), 66px); }
+#power { color: var(--danger); }
+.pad button svg { width: 30px; height: 30px; }
+
+.pad-wrap { flex: 1 1 0; min-height: 140px; container-type: size; display: grid; place-items: center; }
+.pad { position: relative; width: min(100cqw, 100cqh, 380px); aspect-ratio: 1; border-radius: 50%; background: var(--surface); }
+.pad button { position: absolute; background: transparent; border-radius: 0; }
+.pad button:active, .pad button.down { background: rgba(255,255,255,.06); transform: none; }
+.pad .up { top: 0; left: 30%; width: 40%; height: 30%; border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
+.pad .down-k { bottom: 0; left: 30%; width: 40%; height: 30%; border-radius: 0 0 50% 50% / 0 0 100% 100%; }
+.pad .left { left: 0; top: 30%; width: 30%; height: 40%; border-radius: 50% 0 0 50% / 50% 0 0 50%; }
+.pad .right { right: 0; top: 30%; width: 30%; height: 40%; border-radius: 0 50% 50% 0 / 0 50% 50% 0; }
+.pad .ok {
+  left: 30%; top: 30%; width: 40%; height: 40%; border-radius: 50%;
+  background: var(--surface-2); font-weight: 600; font-size: 19px; box-shadow: 0 0 0 6px var(--bg);
+}
+.pad .ok:active, .pad .ok.down { background: var(--accent); }
+
+.nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.nav button { height: clamp(40px, calc(6.6 * var(--vh)), 62px); }
+
+.middle { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 12px; align-items: stretch; }
+.rocker { display: grid; grid-template-rows: 1fr auto 1fr; background: var(--surface); border-radius: var(--radius); overflow: hidden; }
+.rocker button { background: transparent; border-radius: 0; height: clamp(38px, calc(6.2 * var(--vh)), 62px); }
+.rocker span { text-align: center; font-size: 11px; color: var(--muted); padding: 2px 0; }
+.media { display: grid; grid-template-rows: 1fr 1fr; gap: 12px; }
+.media .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.media button { height: 100%; min-height: 38px; }
+
+.vol { display: flex; align-items: center; gap: 12px; background: var(--surface); border-radius: var(--radius); padding: 0 16px; height: clamp(42px, calc(6.4 * var(--vh)), 60px); flex: 0 0 auto; }
+.vol svg { width: 20px; height: 20px; flex: 0 0 auto; stroke: var(--muted); fill: none; stroke-width: 2; stroke-linejoin: round; }
+.vol span { min-width: 28px; text-align: right; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.vol input { flex: 1; -webkit-appearance: none; appearance: none; height: 32px; background: transparent; margin: 0; --p: 0%; touch-action: none; }
+.vol input::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(to right, var(--accent) var(--p), var(--surface-2) var(--p)); }
+.vol input::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; margin-top: -10px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
+.vol input::-moz-range-track { height: 6px; border-radius: 3px; background: linear-gradient(to right, var(--accent) var(--p), var(--surface-2) var(--p)); }
+.vol input::-moz-range-thumb { width: 26px; height: 26px; border: 0; border-radius: 50%; background: #fff; }
+
+.switch { background: transparent; display: flex; align-items: center; gap: 10px; padding: 0; border-radius: 14px; min-width: 0; flex: 1 1 auto; justify-content: flex-start; }
+header { gap: 10px; }
+.status { flex: 0 0 auto; }
+.switch:active { background: transparent; transform: scale(.97); }
+.switch .tile { width: 38px; height: 38px; border-radius: 11px; background: var(--surface-2); display: grid; place-items: center; flex: 0 0 auto; }
+.switch .tile svg { width: 20px; height: 20px; }
+.switch #tv-name { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.switch .chev { width: 18px; height: 18px; color: var(--muted); flex: 0 0 auto; }
+
+.sheet { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: flex-end; z-index: 10; }
+.sheet-panel { width: 100%; max-width: 480px; margin: 0 auto; background: #121826; border-radius: 24px 24px 0 0;
+  max-height: 88%; overflow-y: auto; -webkit-overflow-scrolling: touch; -webkit-user-select: text; user-select: text;
+  padding: 10px 16px calc(env(safe-area-inset-bottom) + 20px); display: flex; flex-direction: column; gap: 12px; }
+.grip { width: 40px; height: 5px; border-radius: 3px; background: var(--surface-2); margin: 0 auto 4px; }
+.sheet h2 { margin: 0; font-size: 18px; }
+.tv-list { display: flex; flex-direction: column; gap: 8px; }
+.tv-row { display: flex; align-items: center; gap: 12px; background: var(--surface); border-radius: 16px; padding: 12px 14px; }
+.tv-row.current { box-shadow: inset 0 0 0 2px var(--accent); }
+.tv-row .name { flex: 1; font-size: 16px; font-weight: 600; }
+.tv-row .sub { font-size: 12px; color: var(--muted); font-weight: 400; display: block; margin-top: 2px; }
+.tv-row button { background: transparent; color: var(--muted); width: 36px; height: 36px; border-radius: 10px; }
+.tv-row button svg { width: 18px; height: 18px; }
+.tv-row .dot { flex: 0 0 auto; }
+.tv-row.online .dot { background: var(--ok); box-shadow: 0 0 0 3px rgba(52,211,153,.15); }
+.tv-row.offline .dot { background: var(--danger); box-shadow: 0 0 0 3px rgba(255,90,95,.15); }
+.section-head { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+.section-head h2 { font-size: 16px; }
+.pill { height: 34px; padding: 0 14px; border-radius: 17px; background: var(--accent); color: #fff; font-size: 14px; font-weight: 600; flex: 0 0 auto; }
+.pill:disabled { opacity: .5; }
+.hint { margin: 0; font-size: 13px; color: var(--muted); min-height: 1em; }
+.ip-row { display: flex; gap: 8px; }
+.ip-row input { flex: 1; min-width: 0; height: 40px; border-radius: 12px; border: 0; padding: 0 12px; background: var(--surface);
+  color: var(--text); font: inherit; font-size: 16px; }
+.add { border: 1px dashed var(--surface-2); border-radius: 16px; padding: 12px 14px; font-size: 14px; }
+.add p { margin: 4px 0 0; color: var(--muted); line-height: 1.45; }
+
+.apps { flex: 0 0 auto; margin-top: auto; }
+.apps h2 { font-size: 12px; font-weight: 600; color: var(--muted); margin: 0 0 8px; text-transform: uppercase; letter-spacing: .06em; }
+.chips { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chips button { flex: 0 0 auto; height: clamp(38px, calc(5.8 * var(--vh)), 50px); padding: 0 18px; border-radius: 22px; font-size: 15px; white-space: nowrap; }
+
+.banner { display: flex; align-items: center; gap: 8px; background: var(--surface); border-radius: 14px; padding: 8px 6px 8px 12px; font-size: 13px; color: var(--muted); line-height: 1.35; flex: 0 0 auto; }
+.banner p { margin: 0; flex: 1; }
+.banner button { background: transparent; width: 32px; height: 32px; border-radius: 10px; flex: 0 0 auto; }
+.banner button svg { width: 16px; height: 16px; }
+.banner b { color: var(--text); }
+
+.onboard { min-height: 70vh; display: flex; flex-direction: column; justify-content: center; text-align: center; gap: 14px; }
+.onboard h1 { font-size: 26px; }
+.onboard p { color: var(--muted); line-height: 1.5; margin: 0; }
+
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 24px); transform: translateX(-50%);
+  background: var(--surface-2); padding: 10px 16px; border-radius: 14px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<main>
+  <section id="onboard" class="onboard hidden">
+    <h1>Télécommande</h1>
+    <p>Sur la télé, ouvre l'app <b>Télécommande</b>, puis scanne le QR code avec l'appareil photo de ton iPhone.</p>
+  </section>
+
+  <section id="remote" class="hidden">
+    <header>
+      <button id="tv-switch" class="switch" aria-label="Changer de télé">
+        <span class="tile"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8"/></svg></span>
+        <span id="tv-name">Télé</span>
+        <svg class="chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div id="status" class="status"><span class="dot"></span><span id="status-text">Connexion…</span></div>
+    </header>
+
+    <div id="install" class="banner hidden">
+      <p>Pour l'avoir comme une app : <b>Partager</b> <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><path d="M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg> puis <b>Sur l'écran d'accueil</b>.</p>
+      <button id="install-close" aria-label="Masquer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+
+    <div class="top">
+      <button id="power" data-key="26" aria-label="Éteindre"><svg viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M6.3 7.2a8 8 0 1 0 11.4 0"/></svg></button>
+      <button data-key="176" aria-label="Paramètres"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+      <button data-key="178" aria-label="Source"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg></button>
+      <button id="mute" data-key="164" aria-label="Couper le son"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m23 9-6 6M17 9l6 6"/></svg></button>
+    </div>
+
+    <div class="pad-wrap"><div class="pad">
+      <button class="up" data-key="19" data-repeat aria-label="Haut"><svg viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg></button>
+      <button class="left" data-key="21" data-repeat aria-label="Gauche"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+      <button class="right" data-key="22" data-repeat aria-label="Droite"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button>
+      <button class="down-k" data-key="20" data-repeat aria-label="Bas"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+      <button class="ok" data-key="23">OK</button>
+    </div></div>
+
+    <div class="nav">
+      <button data-key="4" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg></button>
+      <button data-key="3" aria-label="Accueil"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></button>
+      <button data-key="82" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    </div>
+
+    <div class="middle">
+      <div class="rocker">
+        <button data-key="24" data-repeat aria-label="Volume plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <span>VOL</span>
+        <button data-key="25" data-repeat aria-label="Volume moins"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+      </div>
+      <div class="media">
+        <button data-key="85" aria-label="Lecture / pause"><svg viewBox="0 0 24 24"><path d="M6 4v16l8-8z"/><path d="M17 5v14M21 5v14"/></svg></button>
+        <div class="row">
+          <button data-key="89" data-repeat aria-label="Retour rapide"><svg viewBox="0 0 24 24"><path d="m11 19-9-7 9-7zM22 19l-9-7 9-7z"/></svg></button>
+          <button data-key="90" data-repeat aria-label="Avance rapide"><svg viewBox="0 0 24 24"><path d="m13 19 9-7-9-7zM2 19l9-7-9-7z"/></svg></button>
+        </div>
+      </div>
+      <div class="rocker">
+        <button data-key="166" aria-label="Chaîne suivante"><svg viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg></button>
+        <span>CH</span>
+        <button data-key="167" aria-label="Chaîne précédente"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+    </div>
+
+    <div id="vol-row" class="vol">
+      <svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5z"/></svg>
+      <input id="vol" type="range" min="0" max="100" value="0" aria-label="Volume">
+      <span id="vol-value">–</span>
+    </div>
+
+    <section class="apps">
+      <h2>Applications</h2>
+      <div id="apps" class="chips"></div>
+    </section>
+  </section>
+</main>
+
+<div id="sheet" class="sheet hidden">
+  <div class="sheet-panel" role="dialog" aria-label="Mes télés">
+    <div class="grip"></div>
+    <h2>Mes télés</h2>
+    <div id="tv-list" class="tv-list"></div>
+
+    <div class="section-head">
+      <h2>Sur ce Wi-Fi</h2>
+      <button id="scan" class="pill">Rechercher</button>
+    </div>
+    <p id="scan-state" class="hint"></p>
+    <div id="found-list" class="tv-list"></div>
+    <div class="ip-row">
+      <input id="ip" type="text" inputmode="decimal" placeholder="Adresse IP de la télé (ex. 192.168.1.20)" autocomplete="off">
+      <button id="ip-add" class="pill">Ajouter</button>
+    </div>
+
+    <div class="add">
+      <b>Contrôle complet, de partout</b>
+      <p>Sur une télé où l'app <b>Télécommande</b> est installée, scanne son QR code avec l'appareil photo. Elle s'ajoute ici automatiquement.</p>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script src="mqtt.min.js"></script>
+<script src="gcm.min.js"></script>
+<script src="local.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
