@@ -110,9 +110,10 @@ const Local = (() => {
     const list = [...new Set([...(extra || []), ...SUBNETS])];
     const found = await Promise.all(list.map(async (s) => {
       const [a, b] = await Promise.all([probe(`http://${s}.1/`, 1500), probe(`http://${s}.254/`, 1500)]);
-      return a || b ? s : null;
+      // Une box qui répond vraiment (page web) passe avant une simple réponse de refus
+      return a || b ? { s, score: a === "open" || b === "open" ? 0 : 1 } : null;
     }));
-    return found.filter(Boolean);
+    return found.filter(Boolean).sort((x, y) => x.score - y.score).map((x) => x.s);
   }
 
   /** Cherche les télés du Wi-Fi ; onFound est appelé à chaque télé trouvée, onProgress de 0 à 1. */
