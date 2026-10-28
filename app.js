@@ -276,8 +276,18 @@ async function scanWifi() {
     if (found.length || $("scan-state").textContent.startsWith("Recherche")) renderFound();
     refreshNearby();
   }
+  // Arrivée dans une autre maison : si la télé actuelle n'est pas ici, on se connecte directement à celle du Wi-Fi
   const fresh = found.filter((f) => !isKnown(f));
-  if (fresh.length && $("sheet").classList.contains("hidden")) toast(`${fresh.length} télé(s) trouvée(s) sur ce Wi-Fi`);
+  const tv = current();
+  if (fresh.length && (!tv || tvOnline(tv) === false)) {
+    const order = { roku: 0, samsung: 1, lg: 2, cast: 3 };
+    const pick = fresh.slice().sort((a, b) => order[a.type] - order[b.type])[0];
+    addLocal(pick);
+    // Samsung et LG affichent déjà le message « Accepte la demande sur la télé »
+    if (pick.type === "roku" || pick.type === "cast") toast(`Connecté à ${pick.name}`);
+  } else if (fresh.length && $("sheet").classList.contains("hidden")) {
+    toast(`${fresh.length} télé(s) trouvée(s) sur ce Wi-Fi`);
+  }
 }
 
 async function addByIp() {

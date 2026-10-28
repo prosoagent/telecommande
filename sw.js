@@ -1,7 +1,7 @@
 // Ouvre la page instantanément même sans réseau. La page elle-même est toujours demandée au réseau
 // d'abord ; le cache ne sert qu'en secours, et seulement des réponses directes (jamais de redirection,
 // que Safari refuse d'afficher quand elles viennent d'un service worker).
-const CACHE = "telecommande-v7";
+const CACHE = "telecommande-v8";
 const FILES = ["index.html", "app.js", "mqtt.min.js", "gcm.min.js", "local.js", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"];
 
 const usable = (res) => res && res.ok && !res.redirected && res.type === "basic";
